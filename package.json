@@ -13,6 +13,8 @@
     "setup": "prisma db push && tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.3",
+    "@prisma/adapter-libsql": "^7.8.0",
     "@prisma/client": "^6.6.0",
     "next": "^15.3.1",
     "prisma": "^6.6.0",
