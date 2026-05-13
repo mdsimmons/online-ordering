@@ -1,0 +1,142 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  sortOrder Int        @default(0)
+  isActive  Boolean    @default(true)
+  items     MenuItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model MenuItem {
+  id              String                @id @default(cuid())
+  name            String
+  description     String
+  price           Float
+  image           String?
+  isAvailable     Boolean               @default(true)
+  outOfStockUntil DateTime?
+  outOfStockIndefinite Boolean           @default(false)
+  sortOrder       Int                   @default(0)
+  categoryId      String
+  category        Category              @relation(fields: [categoryId], references: [id])
+  modifierGroups  MenuItemModifierGroup[]
+  orderItems      OrderItem[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+}
+
+model ModifierGroup {
+  id        String                @id @default(cuid())
+  name      String
+  minSelect Int                   @default(0)
+  maxSelect Int                   @default(1)
+  isRequired Boolean              @default(false)
+  sortOrder Int                   @default(0)
+  options   ModifierOption[]
+  menuItems MenuItemModifierGroup[]
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+}
+
+model ModifierOption {
+  id              String                @id @default(cuid())
+  name            String
+  price           Float                 @default(0)
+  outOfStockUntil DateTime?
+  outOfStockIndefinite Boolean          @default(false)
+  sortOrder       Int                   @default(0)
+  groupId         String
+  group           ModifierGroup         @relation(fields: [groupId], references: [id])
+  orderItemMods   OrderItemModifier[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+}
+
+model MenuItemModifierGroup {
+  menuItemId    String
+  menuItem      MenuItem      @relation(fields: [menuItemId], references: [id])
+  modifierGroupId String
+  modifierGroup ModifierGroup @relation(fields: [modifierGroupId], references: [id])
+
+  @@id([menuItemId, modifierGroupId])
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  customerName  String
+  email         String?
+  phone         String
+  notes         String?
+  status        String      @default("pending")
+  estimatedTime String?
+  total         Float
+  couponCode    String?
+  discountAmount Float      @default(0)
+  items         OrderItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Coupon {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  discountType  String    @default("percentage")
+  discountValue Float
+  minOrderAmount Float?
+  maxUses       Int?
+  useCount      Int       @default(0)
+  expiresAt     DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Blacklist {
+  id        String   @id @default(cuid())
+  phone     String?
+  email     String?
+  reason    String?
+  createdAt DateTime @default(now())
+}
+
+model OrderItem {
+  id        String              @id @default(cuid())
+  orderId   String
+  order     Order               @relation(fields: [orderId], references: [id])
+  menuItemId String
+  menuItem  MenuItem            @relation(fields: [menuItemId], references: [id])
+  name      String
+  quantity  Int
+  price     Float
+  modifiers OrderItemModifier[]
+
+  createdAt DateTime @default(now())
+}
+
+model OrderItemModifier {
+  id              String          @id @default(cuid())
+  orderItemId     String
+  orderItem       OrderItem       @relation(fields: [orderItemId], references: [id])
+  modifierOptionId String?
+  modifierOption  ModifierOption? @relation(fields: [modifierOptionId], references: [id])
+  name            String
+  price           Float           @default(0)
+
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}

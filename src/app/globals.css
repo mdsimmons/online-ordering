@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input, textarea, select {
+  font-size: 16px;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+:root {
+  --brand-primary: #f59e0b;
+  --brand-primary-hover: #d97706;
+  --brand-accent: #16a34a;
+  --brand-header-bg: #ffffff;
+  --brand-page-bg: #fafafa;
+  --brand-link: #f59e0b;
+  --brand-btn-text: #ffffff;
+  --amber: #f59e0b;
+  --amber-dark: #d97706;
+  --green: #16a34a;
+  --green-dark: #15803d;
+  --red: #dc2626;
+  --zinc-950: #09090b;
+  --zinc-900: #18181b;
+  --zinc-800: #27272a;
+  --zinc-700: #3f3f46;
+  --zinc-600: #52525b;
+  --zinc-500: #71717a;
+  --zinc-400: #a1a1aa;
+  --zinc-300: #d4d4d8;
+  --zinc-200: #e4e4e7;
+  --zinc-100: #f4f4f5;
+  --zinc-50: #fafafa;
+}
+
+body {
+  background: var(--brand-page-bg);
+  color: var(--zinc-900);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+@media print {
+  .no-print { display: none; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-slide-up { animation: slide-up 0.3s ease-out; }
+.animate-fade-in { animation: fade-in 0.2s ease-out; }
+.animate-pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
+
+.touch-manipulation { touch-action: manipulation; }
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.bg-brand { background-color: var(--brand-primary); }
+.bg-brand-hover:hover { background-color: var(--brand-primary-hover); }
+.text-brand { color: var(--brand-link); }
+.border-brand { border-color: var(--brand-primary); }
+.bg-header { background-color: var(--brand-header-bg); }
+.bg-page { background-color: var(--brand-page-bg); }
+.text-btn { color: var(--brand-btn-text); }
+
+/* Receipt print styles */
+@media print {
+  body { background: white; }
+  .receipt { font-family: 'Courier New', monospace; font-size: 12px; }
+  .receipt h1 { font-size: 18px; text-align: center; }
+  .receipt .divider { border-top: 1px dashed #000; margin: 8px 0; }
+}
