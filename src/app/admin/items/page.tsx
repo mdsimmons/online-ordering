@@ -43,6 +43,7 @@ export default function AdminItemsPage() {
   const [modifierGroups, setModifierGroups] = useState<ModifierGroup[]>([]);
   const [filterCategory, setFilterCategory] = useState<string>("");
   const [editing, setEditing] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ ...emptyForm });
 
   const load = () => {
@@ -56,11 +57,13 @@ export default function AdminItemsPage() {
   const resetForm = () => {
     setForm({ ...emptyForm });
     setEditing(null);
+    setShowForm(false);
   };
 
   const openNew = (catId?: string) => {
     setForm({ ...emptyForm, categoryId: catId || filterCategory || "" });
     setEditing(null);
+    setShowForm(true);
   };
 
   const openEdit = (item: MenuItem) => {
@@ -74,6 +77,7 @@ export default function AdminItemsPage() {
       modifierGroupIds: item.modifierGroups?.map((g) => g.id) || [],
     });
     setEditing(item.id);
+    setShowForm(true);
   };
 
   const handleSave = async () => {
@@ -93,7 +97,8 @@ export default function AdminItemsPage() {
       resetForm();
       load();
     } else {
-      toast.error("Failed to save");
+      const text = await res.text();
+      toast.error("Failed to save: " + text);
     }
   };
 
@@ -153,7 +158,7 @@ export default function AdminItemsPage() {
       </div>
 
       {/* Edit / Create form */}
-      {(editing || form.name || form.price || form.categoryId) && (
+      {showForm && (
         <div className="bg-zinc-800 rounded-xl p-4 mb-6 space-y-3">
           <div className="flex items-center justify-between mb-1">
             <p className="text-sm text-zinc-300 font-medium">{editing ? "Edit Item" : "New Item"}</p>
