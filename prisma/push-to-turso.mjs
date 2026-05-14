@@ -12,17 +12,15 @@ async function main() {
   console.log("Connecting to Turso...");
   const turso = createClient({ url, authToken });
 
-  // Test connection
   try {
     const r = await turso.execute("SELECT 1");
     console.log("Connected to Turso");
-  } catch (e: any) {
+  } catch (e) {
     console.error("Failed to connect to Turso:", e.message);
-    console.log("Starting app anyway — schema may need manual setup");
+    console.log("Starting app anyway");
     process.exit(0);
   }
 
-  // Check if tables exist
   const existing = await turso.execute(
     "SELECT name FROM sqlite_master WHERE type='table' AND name='Setting'"
   );
@@ -52,9 +50,10 @@ async function main() {
   for (const sql of tables) {
     try {
       await turso.execute(sql);
-      console.log("  Created:", sql.split(" ")[2]);
-    } catch (e: any) {
-      console.error("  Error creating table:", e.message);
+      const name = sql.match(/"(\w+)"/);
+      console.log("  Created:", name ? name[1] : "table");
+    } catch (e) {
+      console.error("  Error:", e.message);
     }
   }
 
