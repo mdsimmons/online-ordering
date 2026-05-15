@@ -13,6 +13,7 @@ const nav = [
   { href: "/admin/orders", label: "Orders", icon: "📋" },
   { href: "/admin/settings", label: "Settings", icon: "🔧" },
   { href: "/admin/coupons", label: "Coupons", icon: "🏷️" },
+  { href: "/admin/feedback", label: "Feedback", icon: "💬" },
   { href: "/admin/blacklist", label: "Blacklist", icon: "🚫" },
 ];
 

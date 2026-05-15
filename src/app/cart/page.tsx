@@ -29,6 +29,11 @@ function CartContent() {
   const [savedUrl, setSavedUrl] = useState("");
   const [loadCode, setLoadCode] = useState("");
   const [loadingSaved, setLoadingSaved] = useState(false);
+  const [feedbackCampaign, setFeedbackCampaign] = useState<any>(null);
+  const [feedbackAnswers, setFeedbackAnswers] = useState<Record<string, string>>({});
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackDiscount, setFeedbackDiscount] = useState(0);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
   useEffect(() => {
     try {
@@ -64,6 +69,58 @@ function CartContent() {
       } catch { toast.error("Failed to load saved order"); }
     })();
   }, []);
+
+  useEffect(() => {
+    if (!phone.trim() || cart.items.length === 0 || feedbackSubmitted || feedbackDiscount > 0) return;
+    const timeout = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/feedback/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: phone.trim() }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.qualifies) {
+          setFeedbackCampaign(data);
+          const initial: Record<string, string> = {};
+          (data.questions || []).forEach((q: any) => { initial[q.id] = ""; });
+          setFeedbackAnswers(initial);
+        }
+      } catch {}
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [phone, cart.items.length, feedbackSubmitted, feedbackDiscount]);
+
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackCampaign?.questions?.length) return;
+    setSubmittingFeedback(true);
+    try {
+      const res = await fetch("/api/feedback/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: phone.trim(),
+          customerName: name.trim(),
+          itemId: "", // resolved server-side from campaign config
+          answers: feedbackAnswers,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFeedbackDiscount(data.discountAmount);
+        setFeedbackSubmitted(true);
+        setFeedbackCampaign(null);
+        toast.success(data.message || "Thanks for your feedback!");
+      } else {
+        toast.error(data.error || "Failed to submit feedback");
+      }
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
 
   const checkCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -173,6 +230,7 @@ function CartContent() {
           })),
           total,
           couponCode: couponValid ? couponCode.trim() : undefined,
+          feedbackDiscount: feedbackDiscount || undefined,
         }),
       });
 
@@ -331,17 +389,78 @@ function CartContent() {
             </div>
             {couponValid && (
               <div className="flex items-center justify-between text-sm">
-                <span className="text-green-600">Discount</span>
+                <span className="text-green-600">Coupon Discount</span>
                 <span className="text-green-600">-${couponDiscount.toFixed(2)}</span>
+              </div>
+            )}
+            {feedbackDiscount > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-green-600">Feedback Discount</span>
+                <span className="text-green-600">-${feedbackDiscount.toFixed(2)}</span>
               </div>
             )}
             <div className="border-t border-zinc-200 pt-2 flex items-center justify-between font-bold text-lg">
               <span>Total</span>
-              <span>${Math.max(0, total - couponDiscount).toFixed(2)}</span>
+              <span>${Math.max(0, total - couponDiscount - feedbackDiscount).toFixed(2)}</span>
             </div>
           </div>
           <p className="text-xs text-zinc-400 mt-1">Pay when you pick up</p>
         </div>
+
+        {feedbackCampaign && (
+          <>
+            <div className="fixed inset-0 bg-black/60 z-50" onClick={() => setFeedbackCampaign(null)} />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+                <h2 className="text-lg font-bold mb-1">{feedbackCampaign.title}</h2>
+                <p className="text-sm text-zinc-500 mb-4">{feedbackCampaign.subtitle}</p>
+                <div className="space-y-4">
+                  {(feedbackCampaign.questions || []).map((q: any) => (
+                    <div key={q.id}>
+                      <label className="block text-sm font-medium text-zinc-700 mb-1.5">{q.label}</label>
+                      {q.type === "rating" ? (
+                        <div className="flex gap-2">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setFeedbackAnswers({ ...feedbackAnswers, [q.id]: String(star) })}
+                              className={`w-10 h-10 rounded-full text-lg font-bold transition-colors ${
+                                feedbackAnswers[q.id] === String(star)
+                                  ? "bg-amber-400 text-white"
+                                  : "bg-zinc-100 text-zinc-400 hover:bg-zinc-200"
+                              }`}
+                            >
+                              {star}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <textarea
+                          value={feedbackAnswers[q.id] || ""}
+                          onChange={(e) => setFeedbackAnswers({ ...feedbackAnswers, [q.id]: e.target.value })}
+                          className="w-full p-2.5 border border-zinc-200 rounded-lg text-sm resize-none"
+                          rows={2}
+                          placeholder="Your thoughts..."
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={handleFeedbackSubmit}
+                  disabled={submittingFeedback}
+                  className="w-full py-3 mt-4 bg-zinc-900 text-white font-bold rounded-xl text-sm hover:bg-zinc-800 disabled:opacity-50"
+                >
+                  {submittingFeedback ? "Submitting..." : "Submit Feedback"}
+                </button>
+                <p className="text-xs text-zinc-400 text-center mt-2">
+                  {feedbackCampaign.discountLabel}
+                </p>
+              </div>
+            </div>
+          </>
+        )}
 
         <button
           onClick={handleSave}

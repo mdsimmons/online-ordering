@@ -45,6 +45,8 @@ async function main() {
     `CREATE TABLE IF NOT EXISTS "Blacklist" ("id" TEXT PRIMARY KEY, "phone" TEXT, "email" TEXT, "reason" TEXT, "createdAt" TEXT DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS "Setting" ("key" TEXT PRIMARY KEY, "value" TEXT NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS "Coupon" ("id" TEXT PRIMARY KEY, "code" TEXT NOT NULL UNIQUE, "discountType" TEXT DEFAULT 'percentage', "discountValue" REAL NOT NULL, "minOrderAmount" REAL, "maxUses" INTEGER, "useCount" INTEGER DEFAULT 0, "expiresAt" TEXT, "isActive" INTEGER DEFAULT 1, "createdAt" TEXT DEFAULT CURRENT_TIMESTAMP, "updatedAt" TEXT DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS "FeedbackResponse" ("id" TEXT PRIMARY KEY, "phone" TEXT NOT NULL, "customerName" TEXT NOT NULL, "itemId" TEXT NOT NULL, "answers" TEXT NOT NULL, "discountAmount" REAL DEFAULT 0, "discountUsed" INTEGER DEFAULT 0, "orderId" TEXT, "createdAt" TEXT DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE INDEX IF NOT EXISTS "FeedbackResponse_phone_idx" ON "FeedbackResponse"("phone")`,
   ];
 
   for (const sql of tables) {

@@ -152,3 +152,17 @@ model SavedCart {
 
   @@index([phone])
 }
+
+model FeedbackResponse {
+  id          String   @id @default(cuid())
+  phone       String
+  customerName String
+  itemId      String
+  answers     String
+  discountAmount Float  @default(0)
+  discountUsed  Boolean @default(false)
+  orderId     String?
+  createdAt   DateTime @default(now())
+
+  @@index([phone])
+}

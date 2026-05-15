@@ -64,7 +64,21 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const finalTotal = Math.round((total - discountAmount) * 100) / 100;
+  let feedbackDiscountAmount = 0;
+  let feedbackResponseId: string | null = null;
+
+  if (body.feedbackDiscount && phone) {
+    const feedback = await prisma.feedbackResponse.findFirst({
+      where: { phone, discountUsed: false },
+      orderBy: { createdAt: "desc" },
+    });
+    if (feedback) {
+      feedbackDiscountAmount = Math.min(feedback.discountAmount, Math.max(0, total - discountAmount));
+      feedbackResponseId = feedback.id;
+    }
+  }
+
+  const finalTotal = Math.round((total - discountAmount - feedbackDiscountAmount) * 100) / 100;
 
   const order = await prisma.order.create({
     data: {
@@ -74,7 +88,7 @@ export async function POST(req: NextRequest) {
       notes,
       total: finalTotal,
       couponCode: couponCode?.toUpperCase() || null,
-      discountAmount,
+      discountAmount: discountAmount + feedbackDiscountAmount,
       status: "pending",
       items: {
         create: items.map((item: any) => ({
@@ -96,6 +110,13 @@ export async function POST(req: NextRequest) {
       items: { include: { modifiers: true } },
     },
   });
+
+  if (feedbackResponseId) {
+    await prisma.feedbackResponse.update({
+      where: { id: feedbackResponseId },
+      data: { discountUsed: true, orderId: order.id },
+    });
+  }
 
   return NextResponse.json(order, { status: 201 });
 }
