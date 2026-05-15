@@ -5,6 +5,7 @@ import { MenuItemCard } from "@/components/MenuItemCard";
 import { CartDrawer } from "@/components/CartDrawer";
 import { useCart } from "@/components/CartProvider";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 interface Category {
   id: string;
@@ -40,7 +41,10 @@ export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState<string>("");
   const [cartOpen, setCartOpen] = useState(false);
   const [settings, setSettings] = useState<Record<string, string>>({});
-  const { itemCount } = useCart();
+  const { cart, addItem, setNotes, clearCart, itemCount } = useCart();
+  const [showLoadModal, setShowLoadModal] = useState(false);
+  const [loadCode, setLoadCode] = useState("");
+  const [loadingSaved, setLoadingSaved] = useState(false);
 
   useEffect(() => {
     fetch("/api/menu/categories")
@@ -77,8 +81,15 @@ export default function HomePage() {
             </div>
           </div>
           <button
+            onClick={() => setShowLoadModal(true)}
+            className="p-2 text-zinc-500 hover:text-zinc-700 touch-manipulation shrink-0"
+            title="Load saved order"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
+          <button
             onClick={() => setCartOpen(true)}
-            className="relative p-3 bg-brand text-white rounded-full bg-brand-hover transition-colors active:scale-95 touch-manipulation shrink-0 ml-3"
+            className="relative p-3 bg-brand text-white rounded-full bg-brand-hover transition-colors active:scale-95 touch-manipulation shrink-0 ml-1"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="8" cy="21" r="1"/><circle cx="21" cy="21" r="1"/>
@@ -140,6 +151,57 @@ export default function HomePage() {
       </main>
 
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+
+      {showLoadModal && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowLoadModal(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
+              <h2 className="text-lg font-bold mb-1">Load Saved Order</h2>
+              <p className="text-sm text-zinc-500 mb-4">Enter the code from when you saved your order.</p>
+              <div className="flex gap-2 mb-4">
+                <input
+                  value={loadCode}
+                  onChange={(e) => setLoadCode(e.target.value.toUpperCase())}
+                  className="flex-1 p-3 border border-zinc-200 rounded-lg text-base uppercase font-mono tracking-widest text-center"
+                  placeholder="XXXX-XXXX"
+                  maxLength={9}
+                />
+                <button
+                  onClick={async () => {
+                    if (!loadCode.trim()) return toast.error("Enter your save code");
+                    setLoadingSaved(true);
+                    try {
+                      const res = await fetch(`/api/carts/save/${loadCode.trim()}`);
+                      if (!res.ok) { toast.error("Saved order not found"); return; }
+                      const data = await res.json();
+                      if (data.items?.length) {
+                        clearCart();
+                        for (const item of data.items) addItem(item);
+                        if (data.notes) setNotes(data.notes);
+                        setLoadCode("");
+                        setShowLoadModal(false);
+                        toast.success("Saved order loaded!");
+                      }
+                    } catch { toast.error("Failed to load saved order"); }
+                    finally { setLoadingSaved(false); }
+                  }}
+                  disabled={loadingSaved || !loadCode.trim()}
+                  className="px-5 py-3 bg-zinc-900 text-white font-semibold rounded-lg text-sm hover:bg-zinc-800 disabled:opacity-40"
+                >
+                  {loadingSaved ? "..." : "Load"}
+                </button>
+              </div>
+              <button
+                onClick={() => setShowLoadModal(false)}
+                className="text-sm text-zinc-400 hover:text-zinc-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

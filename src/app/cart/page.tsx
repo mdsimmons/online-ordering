@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { useCart } from "@/components/CartProvider";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
 const STORAGE_KEY = "customer_info";
 
-export default function CartPage() {
-  const { cart, removeItem, updateQuantity, setNotes, total, clearCart } = useCart();
+function CartContent() {
+  const { cart, addItem, removeItem, updateQuantity, setNotes, total, clearCart } = useCart();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const loadedRef = useRef(false);
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -21,6 +23,12 @@ export default function CartPage() {
   const [couponValid, setCouponValid] = useState(false);
   const [couponError, setCouponError] = useState("");
   const [checkingCoupon, setCheckingCoupon] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [showSavedModal, setShowSavedModal] = useState(false);
+  const [savedCode, setSavedCode] = useState("");
+  const [savedUrl, setSavedUrl] = useState("");
+  const [loadCode, setLoadCode] = useState("");
+  const [loadingSaved, setLoadingSaved] = useState(false);
 
   useEffect(() => {
     try {
@@ -32,6 +40,29 @@ export default function CartPage() {
         if (info.phone) setPhone(info.phone);
       }
     } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (loadedRef.current) return;
+    const code = searchParams.get("load");
+    if (!code) return;
+    loadedRef.current = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/carts/save/${code}`);
+        if (!res.ok) { toast.error("Saved order not found or expired"); return; }
+        const data = await res.json();
+        if (data.items?.length) {
+          clearCart();
+          for (const item of data.items) {
+            addItem(item);
+          }
+          if (data.notes) setNotes(data.notes);
+          toast.success("Saved order loaded!");
+          router.replace("/cart");
+        }
+      } catch { toast.error("Failed to load saved order"); }
+    })();
   }, []);
 
   const checkCoupon = async () => {
@@ -59,6 +90,50 @@ export default function CartPage() {
       setCouponError("Failed to validate coupon");
     } finally {
       setCheckingCoupon(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/carts/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: cart.items, notes: cart.notes }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setSavedCode(data.code);
+      setSavedUrl(data.url);
+      setShowSavedModal(true);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save order");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLoadSaved = async () => {
+    if (!loadCode.trim()) return toast.error("Enter your save code");
+    const code = loadCode.trim().toUpperCase();
+    setLoadingSaved(true);
+    try {
+      const res = await fetch(`/api/carts/save/${code}`);
+      if (!res.ok) { toast.error("Saved order not found"); return; }
+      const data = await res.json();
+      if (data.items?.length) {
+        clearCart();
+        for (const item of data.items) {
+          addItem(item);
+        }
+        if (data.notes) setNotes(data.notes);
+        setLoadCode("");
+        toast.success("Saved order loaded!");
+      }
+    } catch {
+      toast.error("Failed to load saved order");
+    } finally {
+      setLoadingSaved(false);
     }
   };
 
@@ -120,7 +195,27 @@ export default function CartPage() {
     return (
       <div className="min-h-screen bg-page flex flex-col items-center justify-center p-4 safe-bottom">
         <p className="text-zinc-400 mb-6">Your cart is empty</p>
-        <Link href="/" className="text-brand underline text-lg font-medium">Back to menu</Link>
+        <Link href="/" className="text-brand underline text-lg font-medium mb-8">Back to menu</Link>
+
+        <div className="w-full max-w-sm bg-white rounded-xl p-5 border border-zinc-200">
+          <h2 className="font-semibold text-center mb-3">Load Saved Order</h2>
+          <div className="flex gap-2">
+            <input
+              value={loadCode}
+              onChange={(e) => setLoadCode(e.target.value.toUpperCase())}
+              className="flex-1 p-3 border border-zinc-200 rounded-lg text-base uppercase font-mono text-center tracking-widest"
+              placeholder="XXXX-XXXX"
+              maxLength={9}
+            />
+            <button
+              onClick={handleLoadSaved}
+              disabled={loadingSaved || !loadCode.trim()}
+              className="px-5 py-3 bg-zinc-900 text-white font-semibold rounded-lg text-sm hover:bg-zinc-800 disabled:opacity-40"
+            >
+              {loadingSaved ? "..." : "Load"}
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -249,6 +344,14 @@ export default function CartPage() {
         </div>
 
         <button
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full py-3 font-semibold rounded-xl border-2 border-zinc-300 text-zinc-600 mb-3 hover:bg-zinc-50 transition-colors text-base touch-manipulation active:scale-[0.98]"
+        >
+          {saving ? "Saving..." : "Save & Continue Later"}
+        </button>
+
+        <button
           onClick={handleSubmit}
           disabled={submitting}
           className="w-full py-4 font-bold rounded-xl disabled:opacity-50 transition-colors text-lg touch-manipulation active:scale-[0.98] text-btn"
@@ -257,6 +360,62 @@ export default function CartPage() {
           {submitting ? "Placing Order..." : "Place Order"}
         </button>
       </div>
+
+      {showSavedModal && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowSavedModal(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
+              <div className="text-4xl mb-3">&#128190;</div>
+              <h2 className="text-lg font-bold mb-1">Order Saved!</h2>
+              <p className="text-sm text-zinc-500 mb-4">Come back anytime to reload your order.</p>
+              <div className="bg-zinc-100 rounded-xl p-4 mb-4">
+                <p className="text-xs text-zinc-400 mb-1">Your save code:</p>
+                <p className="text-2xl font-bold tracking-widest font-mono">{savedCode}</p>
+              </div>
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(savedCode);
+                    toast.success("Code copied!");
+                  }}
+                  className="flex-1 py-3 bg-zinc-900 text-white font-semibold rounded-xl text-sm hover:bg-zinc-800"
+                >
+                  Copy Code
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(savedUrl);
+                    toast.success("Link copied!");
+                  }}
+                  className="flex-1 py-3 bg-zinc-900 text-white font-semibold rounded-xl text-sm hover:bg-zinc-800"
+                >
+                  Copy Link
+                </button>
+              </div>
+              <p className="text-xs text-zinc-400 mb-4">Or bookmark the link to return later</p>
+              <button
+                onClick={() => { setShowSavedModal(false); clearCart(); router.push("/"); }}
+                className="w-full py-3 bg-green-600 text-white font-bold rounded-xl text-sm hover:bg-green-700"
+              >
+                Done — Go to Menu
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
+  );
+}
+
+export default function CartPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-page flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-zinc-300 border-t-zinc-900 rounded-full" />
+      </div>
+    }>
+      <CartContent />
+    </Suspense>
   );
 }
