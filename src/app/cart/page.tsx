@@ -94,12 +94,18 @@ function CartContent() {
   };
 
   const handleSave = async () => {
+    if (!phone.trim()) return toast.error("Enter your phone number to save");
     setSaving(true);
     try {
       const res = await fetch("/api/carts/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: cart.items, notes: cart.notes }),
+        body: JSON.stringify({
+          items: cart.items,
+          notes: cart.notes,
+          phone: phone.trim(),
+          customerName: name.trim(),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -114,19 +120,18 @@ function CartContent() {
   };
 
   const handleLoadSaved = async () => {
-    if (!loadCode.trim()) return toast.error("Enter your save code");
-    const code = loadCode.trim().toUpperCase();
+    if (!loadCode.trim()) return toast.error("Enter your phone number");
+    const phoneVal = loadCode.trim();
     setLoadingSaved(true);
     try {
-      const res = await fetch(`/api/carts/save/${code}`);
-      if (!res.ok) { toast.error("Saved order not found"); return; }
+      const res = await fetch(`/api/carts/save/phone/${encodeURIComponent(phoneVal)}`);
+      if (!res.ok) { toast.error("No saved order found for this number"); return; }
       const data = await res.json();
       if (data.items?.length) {
         clearCart();
-        for (const item of data.items) {
-          addItem(item);
-        }
+        for (const item of data.items) addItem(item);
         if (data.notes) setNotes(data.notes);
+        if (data._customerName) setName(data._customerName);
         setLoadCode("");
         toast.success("Saved order loaded!");
       }
@@ -198,14 +203,16 @@ function CartContent() {
         <Link href="/" className="text-brand underline text-lg font-medium mb-8">Back to menu</Link>
 
         <div className="w-full max-w-sm bg-white rounded-xl p-5 border border-zinc-200">
-          <h2 className="font-semibold text-center mb-3">Load Saved Order</h2>
+          <h2 className="font-semibold text-center mb-3">Reorder from Saved Order</h2>
+          <p className="text-xs text-zinc-400 text-center mb-3">Enter the phone number you used to order & we'll load your saved items.</p>
           <div className="flex gap-2">
             <input
               value={loadCode}
-              onChange={(e) => setLoadCode(e.target.value.toUpperCase())}
-              className="flex-1 p-3 border border-zinc-200 rounded-lg text-base uppercase font-mono text-center tracking-widest"
-              placeholder="XXXX-XXXX"
-              maxLength={9}
+              onChange={(e) => setLoadCode(e.target.value)}
+              className="flex-1 p-3 border border-zinc-200 rounded-lg text-base text-center"
+              placeholder="Your phone number"
+              type="tel"
+              inputMode="tel"
             />
             <button
               onClick={handleLoadSaved}
@@ -348,7 +355,7 @@ function CartContent() {
           disabled={saving}
           className="w-full py-3 font-semibold rounded-xl border-2 border-zinc-300 text-zinc-600 mb-3 hover:bg-zinc-50 transition-colors text-base touch-manipulation active:scale-[0.98]"
         >
-          {saving ? "Saving..." : "Save & Continue Later"}
+          {saving ? "Saving..." : "Save as My Order"}
         </button>
 
         <button
@@ -366,39 +373,18 @@ function CartContent() {
           <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowSavedModal(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
-              <div className="text-4xl mb-3">&#128190;</div>
-              <h2 className="text-lg font-bold mb-1">Order Saved!</h2>
-              <p className="text-sm text-zinc-500 mb-4">Come back anytime to reload your order.</p>
+              <div className="text-4xl mb-3">&#128076;</div>
+              <h2 className="text-lg font-bold mb-1">Saved as My Order!</h2>
+              <p className="text-sm text-zinc-500 mb-2">Next time, just enter your phone number to reorder.</p>
               <div className="bg-zinc-100 rounded-xl p-4 mb-4">
-                <p className="text-xs text-zinc-400 mb-1">Your save code:</p>
-                <p className="text-2xl font-bold tracking-widest font-mono">{savedCode}</p>
+                <p className="text-xs text-zinc-400 mb-1">Saved for phone:</p>
+                <p className="text-lg font-bold">{phone}</p>
               </div>
-              <div className="flex gap-2 mb-3">
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(savedCode);
-                    toast.success("Code copied!");
-                  }}
-                  className="flex-1 py-3 bg-zinc-900 text-white font-semibold rounded-xl text-sm hover:bg-zinc-800"
-                >
-                  Copy Code
-                </button>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(savedUrl);
-                    toast.success("Link copied!");
-                  }}
-                  className="flex-1 py-3 bg-zinc-900 text-white font-semibold rounded-xl text-sm hover:bg-zinc-800"
-                >
-                  Copy Link
-                </button>
-              </div>
-              <p className="text-xs text-zinc-400 mb-4">Or bookmark the link to return later</p>
               <button
-                onClick={() => { setShowSavedModal(false); clearCart(); router.push("/"); }}
-                className="w-full py-3 bg-green-600 text-white font-bold rounded-xl text-sm hover:bg-green-700"
+                onClick={() => { setShowSavedModal(false); toast.success("Your order is saved to your phone number!"); }}
+                className="w-full py-3 bg-zinc-900 text-white font-bold rounded-xl text-sm hover:bg-zinc-800 mb-2"
               >
-                Done — Go to Menu
+                Got it
               </button>
             </div>
           </div>

@@ -23,6 +23,7 @@ export async function GET(request: Request) {
           name: true,
           description: true,
           price: true,
+          image: true,
           categoryId: true,
           sortOrder: true,
           isAvailable: true,

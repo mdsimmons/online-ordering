@@ -157,23 +157,24 @@ export default function HomePage() {
           <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowLoadModal(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl text-center">
-              <h2 className="text-lg font-bold mb-1">Load Saved Order</h2>
-              <p className="text-sm text-zinc-500 mb-4">Enter the code from when you saved your order.</p>
+              <h2 className="text-lg font-bold mb-1">My Saved Order</h2>
+              <p className="text-sm text-zinc-500 mb-4">Enter your phone number to reload your saved order.</p>
               <div className="flex gap-2 mb-4">
                 <input
                   value={loadCode}
-                  onChange={(e) => setLoadCode(e.target.value.toUpperCase())}
-                  className="flex-1 p-3 border border-zinc-200 rounded-lg text-base uppercase font-mono tracking-widest text-center"
-                  placeholder="XXXX-XXXX"
-                  maxLength={9}
+                  onChange={(e) => setLoadCode(e.target.value)}
+                  className="flex-1 p-3 border border-zinc-200 rounded-lg text-base text-center"
+                  placeholder="Your phone number"
+                  type="tel"
+                  inputMode="tel"
                 />
                 <button
                   onClick={async () => {
-                    if (!loadCode.trim()) return toast.error("Enter your save code");
+                    if (!loadCode.trim()) return toast.error("Enter your phone number");
                     setLoadingSaved(true);
                     try {
-                      const res = await fetch(`/api/carts/save/${loadCode.trim()}`);
-                      if (!res.ok) { toast.error("Saved order not found"); return; }
+                      const res = await fetch(`/api/carts/save/phone/${encodeURIComponent(loadCode.trim())}`);
+                      if (!res.ok) { toast.error("No saved order for this number"); return; }
                       const data = await res.json();
                       if (data.items?.length) {
                         clearCart();

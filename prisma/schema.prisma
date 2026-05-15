@@ -144,7 +144,11 @@ model Setting {
 model SavedCart {
   id        String   @id @default(cuid())
   code      String   @unique
+  phone     String?
+  customerName String?
   data      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([phone])
 }
