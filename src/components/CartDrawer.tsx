@@ -75,13 +75,6 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                 <span>Total</span>
                 <span>${total.toFixed(2)}</span>
               </div>
-              <textarea
-                placeholder="Order notes (optional)"
-                value={cart.notes}
-                onChange={(e) => useCart().setNotes(e.target.value)}
-                className="w-full p-3 text-sm border border-zinc-200 rounded-lg resize-none"
-                rows={2}
-              />
               <Link
                 href="/cart"
                 onClick={onClose}

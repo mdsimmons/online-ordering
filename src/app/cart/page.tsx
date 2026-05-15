@@ -286,13 +286,6 @@ function CartContent() {
               inputMode="tel"
               className="w-full p-3.5 border border-zinc-200 rounded-lg text-base"
             />
-            <textarea
-              placeholder="Order notes (e.g., allergies, preferences)"
-              value={cart.notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full p-3.5 border border-zinc-200 rounded-lg text-base resize-none"
-              rows={2}
-            />
             <label className="flex items-center gap-3 text-sm text-zinc-500 cursor-pointer py-1 touch-manipulation">
               <input
                 type="checkbox"
