@@ -35,14 +35,39 @@ function CartContent() {
   const [feedbackDiscount, setFeedbackDiscount] = useState(0);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
+  const feedbackCheck = useRef(false);
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const info = JSON.parse(saved);
+        console.log("feedback: loaded from localStorage", info.phone);
         if (info.name) setName(info.name);
         if (info.email) setEmail(info.email);
-        if (info.phone) setPhone(info.phone);
+        if (info.phone) {
+          setPhone(info.phone);
+          setTimeout(async () => {
+            console.log("feedback: mount check running for", info.phone);
+            if (!info.phone.trim() || feedbackCheck.current) return;
+            try {
+              const res = await fetch("/api/feedback/check", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone: info.phone.trim() }),
+              });
+              if (!res.ok) return;
+              const data = await res.json();
+              if (data.qualifies) {
+                feedbackCheck.current = true;
+                setFeedbackCampaign(data);
+                const initial: Record<string, string> = {};
+                (data.questions || []).forEach((q: any) => { initial[q.id] = ""; });
+                setFeedbackAnswers(initial);
+              }
+            } catch {}
+          }, 2000);
+        }
       }
     } catch {}
   }, []);
@@ -71,23 +96,26 @@ function CartContent() {
   }, []);
 
   useEffect(() => {
-    if (!phone.trim() || feedbackSubmitted || feedbackDiscount > 0) return;
+    if (!phone.trim() || feedbackSubmitted || feedbackDiscount > 0 || feedbackCheck.current) return;
+    console.log("feedback: checking eligibility for", phone);
     const timeout = setTimeout(async () => {
+      feedbackCheck.current = true;
       try {
         const res = await fetch("/api/feedback/check", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ phone: phone.trim() }),
         });
-        if (!res.ok) return;
+        if (!res.ok) { console.warn("feedback: api not ok", res.status); return; }
         const data = await res.json();
+        console.log("feedback: api response", data);
         if (data.qualifies) {
           setFeedbackCampaign(data);
           const initial: Record<string, string> = {};
           (data.questions || []).forEach((q: any) => { initial[q.id] = ""; });
           setFeedbackAnswers(initial);
         }
-      } catch {}
+      } catch (e) { console.warn("feedback: fetch failed", e); }
     }, 500);
     return () => clearTimeout(timeout);
   }, [phone, feedbackSubmitted, feedbackDiscount]);
