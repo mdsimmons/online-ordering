@@ -109,6 +109,24 @@ export default function AdminItemsPage() {
     else toast.error("Failed to delete");
   };
 
+  const handleDuplicate = async (item: MenuItem) => {
+    const res = await fetch("/api/admin/items", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: item.name + " (copy)",
+        description: item.description,
+        price: item.price,
+        image: item.image || "",
+        categoryId: item.categoryId,
+        sortOrder: item.sortOrder + 1,
+        modifierGroupIds: item.modifierGroups?.map((g: any) => g.modifierGroup?.id || g.id) || [],
+      }),
+    });
+    if (res.ok) { toast.success("Item duplicated"); load(); }
+    else toast.error("Failed to duplicate");
+  };
+
   const toggleModifierGroup = (id: string) => {
     setForm((f) => ({
       ...f,
@@ -272,6 +290,12 @@ export default function AdminItemsPage() {
                 {item.isAvailable ? "Active" : "Hide"}
               </button>
               <button onClick={() => handleDelete(item.id)} className="px-3 py-1 rounded bg-red-600 text-xs hover:bg-red-700">Delete</button>
+              <button
+                onClick={() => handleDuplicate(item)}
+                className="px-3 py-1 rounded bg-zinc-600 text-xs hover:bg-zinc-500"
+              >
+                Duplicate
+              </button>
             </div>
           </div>
         ))}

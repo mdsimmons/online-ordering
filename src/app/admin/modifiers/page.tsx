@@ -40,6 +40,22 @@ export default function AdminModifiersPage() {
     else toast.error("Failed");
   };
 
+  const handleDuplicate = async (g: any) => {
+    const res = await fetch("/api/admin/modifiers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: g.name + " (copy)",
+        minSelect: g.minSelect,
+        maxSelect: g.maxSelect,
+        isRequired: g.isRequired,
+        options: g.options?.map((o: any) => ({ name: o.name, price: o.price })) || [],
+      }),
+    });
+    if (res.ok) { toast.success("Modifier group duplicated"); load(); }
+    else toast.error("Failed to duplicate");
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this modifier group?")) return;
     const res = await fetch(`/api/admin/modifiers?id=${id}`, { method: "DELETE" });
@@ -111,7 +127,15 @@ export default function AdminModifiersPage() {
                   Select {g.minSelect}-{g.maxSelect} · {g.isRequired ? "Required" : "Optional"} · {g._count?.menuItems || 0} items linked
                 </p>
               </div>
-              <button onClick={() => handleDelete(g.id)} className="px-3 py-1 rounded bg-red-600 text-xs">Delete</button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleDuplicate(g)}
+                  className="px-3 py-1 rounded bg-zinc-600 text-xs hover:bg-zinc-500"
+                >
+                  Duplicate
+                </button>
+                <button onClick={() => handleDelete(g.id)} className="px-3 py-1 rounded bg-red-600 text-xs">Delete</button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-1">
               {g.options?.map((opt: any) => (
