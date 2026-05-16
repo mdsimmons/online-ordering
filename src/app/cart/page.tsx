@@ -71,7 +71,7 @@ function CartContent() {
   }, []);
 
   useEffect(() => {
-    if (!phone.trim() || cart.items.length === 0 || feedbackSubmitted || feedbackDiscount > 0) return;
+    if (!phone.trim() || feedbackSubmitted || feedbackDiscount > 0) return;
     const timeout = setTimeout(async () => {
       try {
         const res = await fetch("/api/feedback/check", {
@@ -90,7 +90,7 @@ function CartContent() {
       } catch {}
     }, 500);
     return () => clearTimeout(timeout);
-  }, [phone, cart.items.length, feedbackSubmitted, feedbackDiscount]);
+  }, [phone, feedbackSubmitted, feedbackDiscount]);
 
   const handleFeedbackSubmit = async () => {
     if (!feedbackCampaign?.questions?.length) return;
