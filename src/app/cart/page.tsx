@@ -412,7 +412,10 @@ function CartContent() {
             <div className="fixed inset-0 bg-black/60 z-50" onClick={() => setFeedbackCampaign(null)} />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-                <h2 className="text-lg font-bold mb-1">{feedbackCampaign.title}</h2>
+                <div className="flex items-start justify-between mb-1">
+                  <h2 className="text-lg font-bold">{feedbackCampaign.title}</h2>
+                  <button onClick={() => setFeedbackCampaign(null)} className="text-zinc-400 hover:text-zinc-700 text-xl leading-none p-1 -m-1">&times;</button>
+                </div>
                 <p className="text-sm text-zinc-500 mb-4">{feedbackCampaign.subtitle}</p>
                 <div className="space-y-4">
                   {(feedbackCampaign.questions || []).map((q: any) => (
