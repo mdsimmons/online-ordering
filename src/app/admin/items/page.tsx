@@ -150,10 +150,10 @@ export default function AdminItemsPage() {
       </div>
 
       {/* Category filter */}
-      <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none">
+      <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none flex-nowrap max-w-full">
         <button
           onClick={() => setFilterCategory("")}
-          className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap ${
+          className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shrink-0 ${
             filterCategory === "" ? "bg-zinc-900 text-white" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
           }`}
         >
@@ -165,7 +165,7 @@ export default function AdminItemsPage() {
             <button
               key={cat.id}
               onClick={() => setFilterCategory(cat.id)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap ${
+              className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shrink-0 ${
                 filterCategory === cat.id ? "bg-zinc-900 text-white" : "bg-zinc-700 text-zinc-300 hover:bg-zinc-600"
               }`}
             >
