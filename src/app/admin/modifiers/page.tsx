@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 export default function AdminModifiersPage() {
   const [groups, setGroups] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
     minSelect: "0",
@@ -19,24 +20,39 @@ export default function AdminModifiersPage() {
 
   const resetForm = () => {
     setForm({ name: "", minSelect: "0", maxSelect: "1", isRequired: false, options: [{ name: "", price: "0" }] });
+    setEditing(null);
     setShowForm(false);
+  };
+
+  const openEdit = (g: any) => {
+    setForm({
+      name: g.name,
+      minSelect: String(g.minSelect),
+      maxSelect: String(g.maxSelect),
+      isRequired: g.isRequired,
+      options: g.options?.map((o: any) => ({ name: o.name, price: String(o.price) })) || [{ name: "", price: "0" }],
+    });
+    setEditing(g.id);
+    setShowForm(true);
   };
 
   const handleSave = async () => {
     if (!form.name) return toast.error("Name required");
     const validOptions = form.options.filter((o) => o.name.trim());
+    const body: any = {
+      name: form.name,
+      minSelect: parseInt(form.minSelect) || 0,
+      maxSelect: parseInt(form.maxSelect) || 1,
+      isRequired: form.isRequired,
+      options: validOptions.map((o) => ({ name: o.name, price: parseFloat(o.price) || 0 })),
+    };
+    if (editing) body.id = editing;
     const res = await fetch("/api/admin/modifiers", {
-      method: "POST",
+      method: editing ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: form.name,
-        minSelect: parseInt(form.minSelect) || 0,
-        maxSelect: parseInt(form.maxSelect) || 1,
-        isRequired: form.isRequired,
-        options: validOptions.map((o) => ({ name: o.name, price: parseFloat(o.price) || 0 })),
-      }),
+      body: JSON.stringify(body),
     });
-    if (res.ok) { toast.success("Modifier group created"); resetForm(); load(); }
+    if (res.ok) { toast.success(editing ? "Modifier group updated" : "Modifier group created"); resetForm(); load(); }
     else toast.error("Failed");
   };
 
@@ -67,7 +83,7 @@ export default function AdminModifiersPage() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Modifier Groups</h1>
-        <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-amber-500 text-black rounded-lg text-sm font-medium">+ New Group</button>
+        <button onClick={() => { resetForm(); setShowForm(true); }} className="px-4 py-2 bg-amber-500 text-black rounded-lg text-sm font-medium">+ New Group</button>
       </div>
 
       {showForm && (
@@ -111,7 +127,7 @@ export default function AdminModifiersPage() {
           <button onClick={() => setForm({ ...form, options: [...form.options, { name: "", price: "0" }] })} className="text-sm text-amber-400">+ Add option</button>
 
           <div className="flex gap-2 pt-2">
-            <button onClick={handleSave} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm">Create</button>
+            <button onClick={handleSave} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm">{editing ? "Update" : "Create"}</button>
             <button onClick={resetForm} className="px-4 py-2 bg-zinc-700 text-zinc-300 rounded-lg text-sm">Cancel</button>
           </div>
         </div>
@@ -128,6 +144,12 @@ export default function AdminModifiersPage() {
                 </p>
               </div>
               <div className="flex gap-2">
+                <button
+                  onClick={() => openEdit(g)}
+                  className="px-3 py-1 rounded bg-zinc-600 text-xs hover:bg-zinc-500"
+                >
+                  Edit
+                </button>
                 <button
                   onClick={() => handleDuplicate(g)}
                   className="px-3 py-1 rounded bg-zinc-600 text-xs hover:bg-zinc-500"
