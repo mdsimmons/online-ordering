@@ -11,19 +11,19 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { name, slug, sortOrder } = body;
+  const { name, slug, sortOrder, availableFrom, availableUntil } = body;
   const category = await prisma.category.create({
-    data: { name, slug, sortOrder: sortOrder || 0 },
+    data: { name, slug, sortOrder: sortOrder || 0, availableFrom: availableFrom || null, availableUntil: availableUntil || null },
   });
   return NextResponse.json(category, { status: 201 });
 }
 
 export async function PUT(req: NextRequest) {
   const body = await req.json();
-  const { id, name, slug, sortOrder, isActive } = body;
+  const { id, name, slug, sortOrder, isActive, availableFrom, availableUntil } = body;
   const category = await prisma.category.update({
     where: { id },
-    data: { name, slug, sortOrder, isActive },
+    data: { name, slug, sortOrder, isActive, availableFrom: availableFrom || null, availableUntil: availableUntil || null },
   });
   return NextResponse.json(category);
 }

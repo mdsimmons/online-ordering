@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { isTimeActive } from "@/lib/time";
 
 export async function GET() {
   const now = new Date();
@@ -26,7 +27,9 @@ export async function GET() {
     },
   });
 
-  const transformed = items.map((item) => ({
+  const filtered = items.filter((item) => isTimeActive(item.availableFrom, item.availableUntil));
+
+  const transformed = filtered.map((item) => ({
     id: item.id,
     name: item.name,
     description: item.description,

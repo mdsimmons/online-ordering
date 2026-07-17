@@ -20,6 +20,8 @@ interface Category {
   slug: string;
   sortOrder: number;
   isActive: boolean;
+  availableFrom?: string | null;
+  availableUntil?: string | null;
   _count?: { items: number };
 }
 
@@ -31,6 +33,8 @@ export default function AdminCategoriesPage() {
   const [slug, setSlug] = useState("");
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: "", price: "" });
+  const [editingCat, setEditingCat] = useState<string | null>(null);
+  const [catForm, setCatForm] = useState({ name: "", slug: "", sortOrder: "", isActive: true, availableFrom: "", availableUntil: "" });
 
   const load = async () => {
     const [cats, its] = await Promise.all([
@@ -93,6 +97,30 @@ export default function AdminCategoriesPage() {
     setEditForm({ name: item.name, price: item.price.toString() });
   };
 
+  const startEditCat = (cat: Category) => {
+    setCatForm({ name: cat.name, slug: cat.slug, sortOrder: String(cat.sortOrder), isActive: cat.isActive, availableFrom: cat.availableFrom || "", availableUntil: cat.availableUntil || "" });
+    setEditingCat(cat.id);
+  };
+
+  const saveCat = async () => {
+    if (!catForm.name || !catForm.slug) return toast.error("Name and slug required");
+    const res = await fetch("/api/admin/categories", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: editingCat,
+        name: catForm.name,
+        slug: catForm.slug.toLowerCase().replace(/\s+/g, "-"),
+        sortOrder: parseInt(catForm.sortOrder) || 0,
+        isActive: catForm.isActive,
+        availableFrom: catForm.availableFrom || null,
+        availableUntil: catForm.availableUntil || null,
+      }),
+    });
+    if (res.ok) { toast.success("Category updated"); setEditingCat(null); load(); }
+    else toast.error("Failed to update");
+  };
+
   const catItems = (catId: string) => items.filter((i) => i.categoryId === catId).sort((a, b) => a.sortOrder - b.sortOrder);
 
   return (
@@ -124,9 +152,10 @@ export default function AdminCategoriesPage() {
               >
                 <div>
                   <p className="font-medium">{cat.name}</p>
-                  <p className="text-xs text-zinc-400">/{cat.slug} · {count} items</p>
+                  <p className="text-xs text-zinc-400">/{cat.slug} · {count} items{cat.availableFrom || cat.availableUntil ? ` · ${cat.availableFrom || "00:00"}-${cat.availableUntil || "23:59"}` : ""}</p>
                 </div>
                 <div className="flex items-center gap-3">
+                  <button onClick={(e) => { e.stopPropagation(); startEditCat(cat); }} className="px-3 py-1 rounded bg-zinc-600 text-xs hover:bg-zinc-500">Edit</button>
                   <span className={`text-sm transition-transform ${isExpanded ? "rotate-180" : ""}`}>▾</span>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteCat(catId); }}
@@ -136,6 +165,36 @@ export default function AdminCategoriesPage() {
                   </button>
                 </div>
               </div>
+
+              {editingCat === catId && (
+                <div className="border-t border-zinc-700 p-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <input placeholder="Name" value={catForm.name} onChange={(e) => setCatForm({ ...catForm, name: e.target.value })} className="w-full p-2 rounded bg-zinc-700 text-sm" />
+                    <input placeholder="Slug" value={catForm.slug} onChange={(e) => setCatForm({ ...catForm, slug: e.target.value.toLowerCase().replace(/\s+/g, "-") })} className="w-full p-2 rounded bg-zinc-700 text-sm" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input placeholder="Sort Order" type="number" value={catForm.sortOrder} onChange={(e) => setCatForm({ ...catForm, sortOrder: e.target.value })} className="w-full p-2 rounded bg-zinc-700 text-sm" />
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={catForm.isActive} onChange={(e) => setCatForm({ ...catForm, isActive: e.target.checked })} className="accent-amber-500" />
+                      Active
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-zinc-400 mb-1">Available From</label>
+                      <input type="time" value={catForm.availableFrom} onChange={(e) => setCatForm({ ...catForm, availableFrom: e.target.value })} className="w-full p-2 rounded bg-zinc-700 text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-zinc-400 mb-1">Available Until</label>
+                      <input type="time" value={catForm.availableUntil} onChange={(e) => setCatForm({ ...catForm, availableUntil: e.target.value })} className="w-full p-2 rounded bg-zinc-700 text-sm" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={saveCat} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm">Save</button>
+                    <button onClick={() => setEditingCat(null)} className="px-4 py-2 bg-zinc-700 text-zinc-300 rounded-lg text-sm">Cancel</button>
+                  </div>
+                </div>
+              )}
 
               {isExpanded && (
                 <div className="border-t border-zinc-700">

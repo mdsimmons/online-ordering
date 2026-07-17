@@ -27,7 +27,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, description, price, image, categoryId, sortOrder, modifierGroupIds } = body;
+    const { name, description, price, image, categoryId, sortOrder, modifierGroupIds, availableFrom, availableUntil } = body;
 
     const item = await prisma.menuItem.create({
       data: {
@@ -37,6 +37,8 @@ export async function POST(req: NextRequest) {
         image,
         categoryId,
         sortOrder: sortOrder || 0,
+        availableFrom: availableFrom || null,
+        availableUntil: availableUntil || null,
         modifierGroups: modifierGroupIds
           ? {
               create: modifierGroupIds.map((groupId: string) => ({
@@ -62,7 +64,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, name, description, price, image, categoryId, isAvailable, sortOrder, modifierGroupIds } = body;
+    const { id, name, description, price, image, categoryId, isAvailable, sortOrder, modifierGroupIds, availableFrom, availableUntil } = body;
 
     const item = await prisma.menuItem.update({
       where: { id },
@@ -74,6 +76,8 @@ export async function PUT(req: NextRequest) {
         categoryId,
         isAvailable,
         sortOrder,
+        availableFrom: availableFrom || null,
+        availableUntil: availableUntil || null,
       },
     });
 

@@ -8,14 +8,16 @@ datasource db {
 }
 
 model Category {
-  id        String     @id @default(cuid())
-  name      String
-  slug      String     @unique
-  sortOrder Int        @default(0)
-  isActive  Boolean    @default(true)
-  items     MenuItem[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id             String     @id @default(cuid())
+  name           String
+  slug           String     @unique
+  sortOrder      Int        @default(0)
+  isActive       Boolean    @default(true)
+  availableFrom  String?
+  availableUntil String?
+  items          MenuItem[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 }
 
 model MenuItem {
@@ -25,6 +27,8 @@ model MenuItem {
   price           Float
   image           String?
   isAvailable     Boolean               @default(true)
+  availableFrom   String?
+  availableUntil  String?
   outOfStockUntil DateTime?
   outOfStockIndefinite Boolean           @default(false)
   sortOrder       Int                   @default(0)

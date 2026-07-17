@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { isTimeActive } from "@/lib/time";
 
 export async function GET(request: Request) {
   const now = new Date();
@@ -28,10 +29,20 @@ export async function GET(request: Request) {
           sortOrder: true,
           isAvailable: true,
           outOfStockIndefinite: true,
+          availableFrom: true,
+          availableUntil: true,
         },
       },
     },
   });
+
+  const catFiltered = categories
+    .filter((c) => isTimeActive(c.availableFrom, c.availableUntil))
+    .map((c) => ({
+      ...c,
+      items: c.items.filter((i: any) => isTimeActive(i.availableFrom, i.availableUntil)),
+    }))
+    .filter((c) => c.items.length > 0);
 
   const origin = request.headers.get("origin") || "";
   const allowedOrigins = [
@@ -40,7 +51,7 @@ export async function GET(request: Request) {
   ];
   const corsOrigin = allowedOrigins.includes(origin) ? origin : "https://paw-pawsplace.com";
 
-  const body = JSON.stringify(categories);
+  const body = JSON.stringify(catFiltered);
 
   return new NextResponse(body, {
     headers: {

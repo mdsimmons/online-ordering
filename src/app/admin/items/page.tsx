@@ -34,6 +34,8 @@ const emptyForm = {
   image: "",
   categoryId: "",
   sortOrder: "0",
+  availableFrom: "",
+  availableUntil: "",
   modifierGroupIds: [] as string[],
 };
 
@@ -66,7 +68,7 @@ export default function AdminItemsPage() {
     setShowForm(true);
   };
 
-  const openEdit = (item: MenuItem) => {
+  const openEdit = (item: any) => {
     setForm({
       name: item.name,
       description: item.description || "",
@@ -74,6 +76,8 @@ export default function AdminItemsPage() {
       image: item.image || "",
       categoryId: item.categoryId,
       sortOrder: item.sortOrder.toString(),
+      availableFrom: item.availableFrom || "",
+      availableUntil: item.availableUntil || "",
       modifierGroupIds: item.modifierGroups?.map((g: any) => g.modifierGroup?.id || g.modifierGroupId) || [],
     });
     setEditing(item.id);
@@ -188,6 +192,16 @@ export default function AdminItemsPage() {
             <input placeholder="Price" type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="w-full p-2 rounded bg-zinc-700 text-sm" />
             <input placeholder="Sort Order" type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} className="w-full p-2 rounded bg-zinc-700 text-sm" />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1">Available From</label>
+              <input type="time" value={form.availableFrom} onChange={(e) => setForm({ ...form, availableFrom: e.target.value })} className="w-full p-2 rounded bg-zinc-700 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1">Available Until</label>
+              <input type="time" value={form.availableUntil} onChange={(e) => setForm({ ...form, availableUntil: e.target.value })} className="w-full p-2 rounded bg-zinc-700 text-sm" />
+            </div>
+          </div>
           <div>
             <label className="block text-xs text-zinc-400 mb-1">Image</label>
             <input placeholder="Image URL (optional)" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} className="w-full p-2 rounded bg-zinc-700 text-sm mb-2" />
@@ -270,6 +284,7 @@ export default function AdminItemsPage() {
               <p className="text-xs text-zinc-400">
                 ${item.price.toFixed(2)} · {item.category?.name || "Uncategorized"}
                 {!item.isAvailable && <span className="text-red-400 ml-2">Unavailable</span>}
+                {(item.availableFrom || item.availableUntil) && <span className="text-cyan-400 ml-2">{item.availableFrom || "00:00"}-{item.availableUntil || "23:59"}</span>}
                 {item.modifierGroups?.length > 0 && (
                   <span className="text-amber-400 ml-2">{item.modifierGroups.map((g: any) => g.modifierGroup?.name || g.name).join(", ")}</span>
                 )}

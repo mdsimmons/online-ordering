@@ -34,8 +34,8 @@ async function main() {
   console.log("Creating tables on Turso...");
 
   const tables = [
-    `CREATE TABLE IF NOT EXISTS "Category" ("id" TEXT PRIMARY KEY, "name" TEXT NOT NULL, "slug" TEXT NOT NULL UNIQUE, "sortOrder" INTEGER DEFAULT 0, "isActive" INTEGER DEFAULT 1, "createdAt" TEXT DEFAULT CURRENT_TIMESTAMP, "updatedAt" TEXT DEFAULT CURRENT_TIMESTAMP)`,
-    `CREATE TABLE IF NOT EXISTS "MenuItem" ("id" TEXT PRIMARY KEY, "name" TEXT NOT NULL, "description" TEXT NOT NULL, "price" REAL NOT NULL, "image" TEXT, "isAvailable" INTEGER DEFAULT 1, "outOfStockUntil" TEXT, "outOfStockIndefinite" INTEGER DEFAULT 0, "sortOrder" INTEGER DEFAULT 0, "categoryId" TEXT NOT NULL, "createdAt" TEXT DEFAULT CURRENT_TIMESTAMP, "updatedAt" TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY ("categoryId") REFERENCES "Category"("id"))`,
+    `CREATE TABLE IF NOT EXISTS "Category" ("id" TEXT PRIMARY KEY, "name" TEXT NOT NULL, "slug" TEXT NOT NULL UNIQUE, "sortOrder" INTEGER DEFAULT 0, "isActive" INTEGER DEFAULT 1, "availableFrom" TEXT, "availableUntil" TEXT, "createdAt" TEXT DEFAULT CURRENT_TIMESTAMP, "updatedAt" TEXT DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS "MenuItem" ("id" TEXT PRIMARY KEY, "name" TEXT NOT NULL, "description" TEXT NOT NULL, "price" REAL NOT NULL, "image" TEXT, "isAvailable" INTEGER DEFAULT 1, "availableFrom" TEXT, "availableUntil" TEXT, "outOfStockUntil" TEXT, "outOfStockIndefinite" INTEGER DEFAULT 0, "sortOrder" INTEGER DEFAULT 0, "categoryId" TEXT NOT NULL, "createdAt" TEXT DEFAULT CURRENT_TIMESTAMP, "updatedAt" TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY ("categoryId") REFERENCES "Category"("id"))`,
     `CREATE TABLE IF NOT EXISTS "ModifierGroup" ("id" TEXT PRIMARY KEY, "name" TEXT NOT NULL, "minSelect" INTEGER DEFAULT 0, "maxSelect" INTEGER DEFAULT 1, "isRequired" INTEGER DEFAULT 0, "sortOrder" INTEGER DEFAULT 0, "createdAt" TEXT DEFAULT CURRENT_TIMESTAMP, "updatedAt" TEXT DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS "ModifierOption" ("id" TEXT PRIMARY KEY, "name" TEXT NOT NULL, "price" REAL DEFAULT 0, "outOfStockUntil" TEXT, "outOfStockIndefinite" INTEGER DEFAULT 0, "sortOrder" INTEGER DEFAULT 0, "groupId" TEXT NOT NULL, "createdAt" TEXT DEFAULT CURRENT_TIMESTAMP, "updatedAt" TEXT DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY ("groupId") REFERENCES "ModifierGroup"("id"))`,
     `CREATE TABLE IF NOT EXISTS "MenuItemModifierGroup" ("menuItemId" TEXT NOT NULL, "modifierGroupId" TEXT NOT NULL, PRIMARY KEY ("menuItemId","modifierGroupId"), FOREIGN KEY ("menuItemId") REFERENCES "MenuItem"("id"), FOREIGN KEY ("modifierGroupId") REFERENCES "ModifierGroup"("id"))`,
@@ -56,6 +56,23 @@ async function main() {
       console.log("  Created:", name ? name[1] : "table");
     } catch (e) {
       console.error("  Error:", e.message);
+    }
+  }
+
+  const migrations = [
+    "ALTER TABLE \"Category\" ADD COLUMN \"availableFrom\" TEXT",
+    "ALTER TABLE \"Category\" ADD COLUMN \"availableUntil\" TEXT",
+    "ALTER TABLE \"MenuItem\" ADD COLUMN \"availableFrom\" TEXT",
+    "ALTER TABLE \"MenuItem\" ADD COLUMN \"availableUntil\" TEXT",
+  ];
+
+  for (const sql of migrations) {
+    try {
+      await turso.execute(sql);
+      const col = sql.match(/"(\w+)"/g)[1];
+      console.log("  Migrated:", col);
+    } catch (e) {
+      // column may already exist, that's fine
     }
   }
 
