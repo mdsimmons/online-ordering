@@ -19,6 +19,8 @@ interface MenuItem {
   sortOrder: number;
   categoryId: string;
   category: { id: string; name: string } | null;
+  availableFrom?: string | null;
+  availableUntil?: string | null;
   modifierGroups: { id: string; name: string }[];
 }
 
@@ -68,7 +70,7 @@ export default function AdminItemsPage() {
     setShowForm(true);
   };
 
-  const openEdit = (item: any) => {
+  const openEdit = (item: MenuItem) => {
     setForm({
       name: item.name,
       description: item.description || "",
