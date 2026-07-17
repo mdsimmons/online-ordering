@@ -103,7 +103,7 @@ export default function HomePage() {
           </button>
         </div>
 
-        <div className="max-w-2xl mx-auto px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory">
+        <div className="max-w-2xl mx-auto px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory" style={{backfaceVisibility:"hidden"}}>
           {categories.map((cat) => (
             <button
               key={cat.id}
