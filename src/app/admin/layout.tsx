@@ -80,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             ))}
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-hidden max-w-full">{children}</main>
+        <main className="flex-1 p-4 md:p-6 overflow-hidden">{children}</main>
       </div>
     </div>
     </AdminAuthGate>

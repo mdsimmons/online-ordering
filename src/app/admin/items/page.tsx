@@ -150,7 +150,7 @@ export default function AdminItemsPage() {
       </div>
 
       {/* Category filter */}
-      <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none flex-nowrap max-w-full">
+      <div className="flex gap-2 mb-4 flex-wrap">
         <button
           onClick={() => setFilterCategory("")}
           className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap shrink-0 ${
