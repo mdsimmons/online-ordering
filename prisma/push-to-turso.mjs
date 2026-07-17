@@ -27,6 +27,22 @@ async function main() {
 
   if (existing.rows.length > 0) {
     console.log("Schema already exists on Turso");
+
+    const migrations = [
+      "ALTER TABLE \"Category\" ADD COLUMN \"availableFrom\" TEXT",
+      "ALTER TABLE \"Category\" ADD COLUMN \"availableUntil\" TEXT",
+      "ALTER TABLE \"MenuItem\" ADD COLUMN \"availableFrom\" TEXT",
+      "ALTER TABLE \"MenuItem\" ADD COLUMN \"availableUntil\" TEXT",
+    ];
+
+    for (const sql of migrations) {
+      try {
+        await turso.execute(sql);
+        const col = sql.match(/"(\w+)"/g)[1];
+        console.log("  Migrated:", col);
+      } catch (e) {}
+    }
+
     await turso.close();
     process.exit(0);
   }
@@ -56,23 +72,6 @@ async function main() {
       console.log("  Created:", name ? name[1] : "table");
     } catch (e) {
       console.error("  Error:", e.message);
-    }
-  }
-
-  const migrations = [
-    "ALTER TABLE \"Category\" ADD COLUMN \"availableFrom\" TEXT",
-    "ALTER TABLE \"Category\" ADD COLUMN \"availableUntil\" TEXT",
-    "ALTER TABLE \"MenuItem\" ADD COLUMN \"availableFrom\" TEXT",
-    "ALTER TABLE \"MenuItem\" ADD COLUMN \"availableUntil\" TEXT",
-  ];
-
-  for (const sql of migrations) {
-    try {
-      await turso.execute(sql);
-      const col = sql.match(/"(\w+)"/g)[1];
-      console.log("  Migrated:", col);
-    } catch (e) {
-      // column may already exist, that's fine
     }
   }
 
