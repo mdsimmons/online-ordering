@@ -103,12 +103,12 @@ export default function HomePage() {
           </button>
         </div>
 
-        <div className="max-w-2xl mx-auto px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-none snap-x snap-mandatory" style={{backfaceVisibility:"hidden"}}>
+        <div className="max-w-2xl mx-auto px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-none">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.slug === activeCategory ? "" : cat.slug)}
-              className={`px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors snap-start touch-manipulation ${
+              className={`px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap touch-manipulation antialiased tracking-tight ${
                 activeCategory === cat.slug
                   ? "bg-zinc-900 text-white"
                   : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 active:bg-zinc-200"
