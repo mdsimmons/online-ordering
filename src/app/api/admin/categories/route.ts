@@ -32,10 +32,16 @@ export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-  await prisma.menuItem.updateMany({
-    where: { categoryId: id },
-    data: { categoryId: "" },
-  });
+
+  const itemIds = (await prisma.menuItem.findMany({ where: { categoryId: id }, select: { id: true } })).map((i) => i.id);
+
+  if (itemIds.length > 0) {
+    await prisma.orderItemModifier.deleteMany({ where: { orderItem: { menuItemId: { in: itemIds } } } });
+    await prisma.orderItem.deleteMany({ where: { menuItemId: { in: itemIds } } });
+    await prisma.menuItemModifierGroup.deleteMany({ where: { menuItemId: { in: itemIds } } });
+    await prisma.menuItem.deleteMany({ where: { id: { in: itemIds } } });
+  }
+
   await prisma.category.delete({ where: { id } });
   return NextResponse.json({ success: true });
 }
