@@ -74,7 +74,7 @@ export default function AdminItemsPage() {
       image: item.image || "",
       categoryId: item.categoryId,
       sortOrder: item.sortOrder.toString(),
-      modifierGroupIds: item.modifierGroups?.map((g) => g.id) || [],
+      modifierGroupIds: item.modifierGroups?.map((g: any) => g.modifierGroup?.id || g.modifierGroupId) || [],
     });
     setEditing(item.id);
     setShowForm(true);
@@ -271,7 +271,7 @@ export default function AdminItemsPage() {
                 ${item.price.toFixed(2)} · {item.category?.name || "Uncategorized"}
                 {!item.isAvailable && <span className="text-red-400 ml-2">Unavailable</span>}
                 {item.modifierGroups?.length > 0 && (
-                  <span className="text-amber-400 ml-2">{item.modifierGroups.map((g) => g.name).join(", ")}</span>
+                  <span className="text-amber-400 ml-2">{item.modifierGroups.map((g: any) => g.modifierGroup?.name || g.name).join(", ")}</span>
                 )}
               </p>
             </div>
