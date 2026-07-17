@@ -141,7 +141,7 @@ export default function AdminItemsPage() {
     : items;
 
   return (
-    <div>
+    <div className="overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Menu Items</h1>
         <button onClick={() => openNew()} className="px-4 py-2 bg-amber-500 text-black font-medium rounded-lg hover:bg-amber-400 text-sm">
