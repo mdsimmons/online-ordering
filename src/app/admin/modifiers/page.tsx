@@ -109,6 +109,26 @@ export default function AdminModifiersPage() {
           <p className="text-xs text-zinc-400 font-medium">Options</p>
           {form.options.map((opt, i) => (
             <div key={i} className="flex gap-2">
+              <button
+                type="button"
+                disabled={i === 0}
+                onClick={() => {
+                  const opts = [...form.options];
+                  [opts[i - 1], opts[i]] = [opts[i], opts[i - 1]];
+                  setForm({ ...form, options: opts });
+                }}
+                className={`px-1.5 text-xs rounded ${i === 0 ? "text-zinc-600" : "text-zinc-300 hover:bg-zinc-600"}`}
+              >▲</button>
+              <button
+                type="button"
+                disabled={i === form.options.length - 1}
+                onClick={() => {
+                  const opts = [...form.options];
+                  [opts[i], opts[i + 1]] = [opts[i + 1], opts[i]];
+                  setForm({ ...form, options: opts });
+                }}
+                className={`px-1.5 text-xs rounded ${i === form.options.length - 1 ? "text-zinc-600" : "text-zinc-300 hover:bg-zinc-600"}`}
+              >▼</button>
               <input placeholder="Option name" value={opt.name} onChange={(e) => {
                 const opts = [...form.options];
                 opts[i].name = e.target.value;
